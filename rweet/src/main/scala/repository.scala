@@ -1,11 +1,11 @@
 package rweet
 
 import scala.concurrent.Future
+import spray.json.DefaultJsonProtocol._
+import com.redis.serialization.SprayJsonSupport._
+import com.redis.serialization._
 
 trait UserFollow { self: persistence with model =>
-  import spray.json.DefaultJsonProtocol._
-  import com.redis.serialization.SprayJsonSupport._
-  import com.redis.serialization._
 
   def followUser(by: User, of: User): Future[Boolean] =
     for {
@@ -21,4 +21,15 @@ trait UserFollow { self: persistence with model =>
     client.smembers(s"user:${by}:followed")
 
   implicit val userFormat = jsonFormat1(User)
+}
+
+trait SendRweet { self: persistence with model =>
+  def sendRweet(rweet: Rweet): Future[Boolean] =
+    client.lpush(s"user.")
+
+}
+
+trait FindRweets { self: persistence with model =>
+  def userWall(of: User): Future[List[Rweet]]
+  def hashTags(tag: HashTag): Future[List[Rweet]]
 }

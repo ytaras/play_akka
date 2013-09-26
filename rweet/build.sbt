@@ -4,6 +4,9 @@ version := "1.0"
 
 scalaVersion := "2.10.2"
 
+resolvers += "spray" at "http://repo.spray.io/"
+
 libraryDependencies ++= Seq(
-  "net.debasishg" %% "redisreact" % "0.1"
+  "net.debasishg" %% "redisreact" % "0.1",
+  "io.spray"    %%  "spray-json"     % "1.2.5"
 )

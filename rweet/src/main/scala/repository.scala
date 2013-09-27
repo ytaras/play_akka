@@ -25,8 +25,9 @@ trait SendRweet { self: persistence with model with UserFollow =>
   def sendRweet(rweet: Rweet) =
     for {
       fs <- followers(rweet.author)
-      _  <- sendToUsers(rweet, fs + rweet.author)
-    } yield ()
+      val targets = fs + rweet.author ++ rweet.users
+      _  <- sendToUsers(rweet, targets)
+    } yield println(targets)
 
   def sendToUsers(rweet: Rweet, users: Set[User]) = {
     val pushes = users.map {
@@ -57,22 +58,29 @@ object Test extends App {
   val u1 = User("user1")
   val u2 = User("user2")
   val u3 = User("user3")
+  val u4 = User("user4")
   val follow = for {
     _    <- client.flushdb()
     _    <- followUser(u1, u2)
     _    <- followUser(u3, u2)
     fs   <- followers(u2)
     fr   <- followed(u1)
-    _    <- sendRweet(Rweet("message", Nil, Nil, u2))
+    _    <- sendRweet(rweetOf(u2, "Hello, @user4, we're talking about #stuff"))
     wall <- userWall(u1)
     wal2 <- userWall(u2)
-  } {
+    wal4 <- userWall(u4)
+  } yield {
     println(s"Followers of ${u2}: ${fs}")
     println(s"Followed by ${u1}: ${fr}")
     println(s"Wall of ${u1}: ${wall}")
     println(s"Wall of ${u2}: ${wal2}")
+    println(s"Wall of ${u4}: ${wal4}")
     system.shutdown
   }
-
+  follow onFailure {
+    case e =>
+      system.shutdown
+      throw e
+  }
 
 }

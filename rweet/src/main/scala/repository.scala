@@ -7,33 +7,32 @@ import com.redis.serialization._
 
 trait UserFollow { self: persistence with model =>
 
-  def followUser(by: User, of: User): Future[Boolean] =
+  def followUser(by: User, of: User) =
     for {
-      // TODO It's sequential?
       followed <- client.sadd(s"user:${of.id}:followers", by)
       follower <- client.sadd(s"user:${by.id}:followed", of)
-    } yield true
+    } yield ()
 
 
-  def followers(of: User): Future[Set[User]] =
-    client.smembers(s"user:${of.id}:followers")
-  def followed(by: User): Future[Set[User]] =
-    client.smembers(s"user:${by.id}:followed")
+  def followers(of: User) =
+    client.smembers[User](s"user:${of.id}:followers")
+  def followed(by: User) =
+    client.smembers[User](s"user:${by.id}:followed")
 
 }
 
 trait SendRweet { self: persistence with model with UserFollow =>
-  def sendRweet(rweet: Rweet): Future[Boolean] =
+  def sendRweet(rweet: Rweet) =
     for {
       fs <- followers(rweet.author)
       _  <- sendToUsers(rweet, fs + rweet.author)
-    } yield true
+    } yield ()
 
-  def sendToUsers(rweet: Rweet, users: Set[User]): Future[Boolean] = {
+  def sendToUsers(rweet: Rweet, users: Set[User]) = {
     val pushes = users.map {
       user => client.lpush(s"user.${user.id}.wall", rweet)
     }
-    Future.sequence(pushes).map { _ => true }
+    Future.sequence(pushes).map { _ => () }
   }
 
 }

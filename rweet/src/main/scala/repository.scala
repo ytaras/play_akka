@@ -25,8 +25,9 @@ trait SendRweet { self: persistence with model with UserFollow =>
   def sendRweet(rweet: Rweet) =
     for {
       fs <- followers(rweet.author)
-      val targets = fs + rweet.author ++ rweet.users
+      targets = fs + rweet.author ++ rweet.users
       _  <- sendToUsers(rweet, targets)
+      _  <- sendToTags(rweet, rweet.tags)
     } yield println(targets)
 
   def sendToUsers(rweet: Rweet, users: Set[User]) = {
@@ -36,13 +37,20 @@ trait SendRweet { self: persistence with model with UserFollow =>
     Future.sequence(pushes).map { _ => () }
   }
 
+  def sendToTags(rweet: Rweet, tags: Set[HashTag]) = {
+    val pushes = tags.map {
+      tag => client.lpush(s"tag.${tag.tag}.wall", rweet)
+    }
+    Future.sequence(pushes).map { _ => () }
+  }
+
 }
 
 trait FindRweets { self: persistence with model =>
   def userWall(of: User) =
     client.lrange[Rweet](s"user.${of.id}.wall", 0, 100)
-  def hashTags(tag: HashTag): Future[List[Rweet]] =
-    ???
+  def hashTags(tag: HashTag) =
+    client.lrange[Rweet](s"tag.${tag.tag}.wall", 0, 100)
 }
 
 trait api extends SendRweet with UserFollow with FindRweets {
@@ -69,12 +77,14 @@ object Test extends App {
     wall <- userWall(u1)
     wal2 <- userWall(u2)
     wal4 <- userWall(u4)
+    hs   <- hashTags(HashTag("stuff"))
   } yield {
     println(s"Followers of ${u2}: ${fs}")
     println(s"Followed by ${u1}: ${fr}")
     println(s"Wall of ${u1}: ${wall}")
     println(s"Wall of ${u2}: ${wal2}")
     println(s"Wall of ${u4}: ${wal4}")
+    println(s"Hash tags for #stuff: ${hs}")
     system.shutdown
   }
   follow onFailure {

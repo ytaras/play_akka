@@ -5,57 +5,64 @@ import spray.json.DefaultJsonProtocol._
 import com.redis.serialization.SprayJsonSupport._
 import com.redis.serialization._
 
-trait UserFollow { self: persistence with model =>
-
-  def followUser(by: User, of: User) =
-    for {
-      followed <- client.sadd(s"user:${of.id}:followers", by)
-      follower <- client.sadd(s"user:${by.id}:followed", of)
-    } yield ()
-
-
-  def followers(of: User) =
-    client.smembers[User](s"user:${of.id}:followers")
-  def followed(by: User) =
-    client.smembers[User](s"user:${by.id}:followed")
+trait repository extends persistence with model {
+  object c {
+    def followers(u: User) = s"user:${u.id}:followers"
+    def followed(u: User) = s"user:${u.id}:followed"
+    def userWall(u: User) = s"user.${u.id}.wall"
+    def hashWall(t: HashTag) = s"tag.${t.tag}.wall"
+  }
 
 }
 
-trait SendRweet { self: persistence with model with UserFollow =>
+trait UserFollow { self: repository =>
+
+  def followUser(by: User, of: User) =
+    for {
+      _ <- client.sadd(c.followers(of), by)
+      _ <- client.sadd(c.followed(by), of)
+    } yield ()
+
+  def followers(of: User) =
+    client.smembers[User](c.followers(of))
+  def followed(by: User) =
+    client.smembers[User](c.followed(by))
+
+}
+
+trait SendRweet { self: repository with UserFollow =>
   def sendRweet(rweet: Rweet) =
     for {
       fs <- followers(rweet.author)
       targets = fs + rweet.author ++ rweet.users
       _  <- sendToUsers(rweet, targets)
       _  <- sendToTags(rweet, rweet.tags)
-    } yield println(targets)
+    } yield ()
 
   def sendToUsers(rweet: Rweet, users: Set[User]) = {
     val pushes = users.map {
-      user => client.lpush(s"user.${user.id}.wall", rweet)
+      u => client.lpush(c.userWall(u), rweet)
     }
     Future.sequence(pushes).map { _ => () }
   }
 
   def sendToTags(rweet: Rweet, tags: Set[HashTag]) = {
     val pushes = tags.map {
-      tag => client.lpush(s"tag.${tag.tag}.wall", rweet)
+      tag => client.lpush(c.hashWall(tag), rweet)
     }
     Future.sequence(pushes).map { _ => () }
   }
 
 }
 
-trait FindRweets { self: persistence with model =>
+trait FindRweets { self: repository =>
   def userWall(of: User) =
-    client.lrange[Rweet](s"user.${of.id}.wall", 0, 100)
+    client.lrange[Rweet](c.userWall(of), 0, 100)
   def hashTags(tag: HashTag) =
-    client.lrange[Rweet](s"tag.${tag.tag}.wall", 0, 100)
+    client.lrange[Rweet](c.hashWall(tag), 0, 100)
 }
 
-trait api extends SendRweet with UserFollow with FindRweets {
-  self: model with persistence =>
-}
+trait api extends SendRweet with UserFollow with FindRweets with repository
 
 object Test extends App {
   object ApiInstance extends api with model with persistence

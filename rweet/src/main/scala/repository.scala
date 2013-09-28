@@ -12,7 +12,6 @@ trait repository extends persistence with model {
     def userWall(u: User) = s"user.${u.id}.wall"
     def hashWall(t: HashTag) = s"tag.${t.tag}.wall"
   }
-
 }
 
 trait UserFollow { self: repository =>
@@ -27,7 +26,6 @@ trait UserFollow { self: repository =>
     client.smembers[User](c.followers(of))
   def followed(by: User) =
     client.smembers[User](c.followed(by))
-
 }
 
 trait SendRweet { self: repository with UserFollow =>
@@ -39,14 +37,14 @@ trait SendRweet { self: repository with UserFollow =>
       _  <- sendToTags(rweet, rweet.tags)
     } yield ()
 
-  def sendToUsers(rweet: Rweet, users: Set[User]) = {
+  private def sendToUsers(rweet: Rweet, users: Set[User]) = {
     val pushes = users.map {
       u => client.lpush(c.userWall(u), rweet)
     }
     Future.sequence(pushes).map { _ => () }
   }
 
-  def sendToTags(rweet: Rweet, tags: Set[HashTag]) = {
+  private def sendToTags(rweet: Rweet, tags: Set[HashTag]) = {
     val pushes = tags.map {
       tag => client.lpush(c.hashWall(tag), rweet)
     }
@@ -62,7 +60,8 @@ trait FindRweets { self: repository =>
     client.lrange[Rweet](c.hashWall(tag), 0, 100)
 }
 
-trait api extends SendRweet with UserFollow with FindRweets with repository
+trait api extends SendRweet with UserFollow with FindRweets
+    with repository
 
 object Test extends App {
   object ApiInstance extends api with model with persistence

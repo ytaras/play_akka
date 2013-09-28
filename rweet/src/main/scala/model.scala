@@ -6,8 +6,11 @@ trait model {
   case class HashTag(tag: String)
   case class Rweet(content: String, users: Set[User],
     tags: Set[HashTag], author: User)
-  def rweetOf(a: User, m: String): Rweet =
-    Rweet(m, users(m), hashTags(m), a)
+
+  object Rweet {
+    def parse(m: String, a: User) =
+      Rweet(m, users(m), hashTags(m), a)
+  }
   def hashTags = parser.extract(hashReg, { HashTag(_) }) _
   def users = parser.extract(userReg, { User(_) }) _
 

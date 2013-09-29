@@ -16,7 +16,7 @@ trait repository extends persistence with model {
 
 trait UserFollow { self: repository =>
 
-  def followUser(by: User, of: User) =
+  def follow(by: User, of: User) =
     for {
       _ <- client.sadd(c.followers(of), by)
       _ <- client.sadd(c.followed(by), of)
@@ -73,13 +73,14 @@ object Test extends App {
   val u2 = User("user2")
   val u3 = User("user3")
   val u4 = User("user4")
-  val follow = for {
+  val followU = for {
     _    <- client.flushdb()
-    _    <- followUser(u1, u2)
-    _    <- followUser(u3, u2)
+    _    <- follow(u1, u2)
+    _    <- follow(u3, u2)
     fs   <- followers(u2)
     fr   <- followed(u1)
-    _    <- sendRweet(rweetOf(u2, "Hello, @user4, we're talking about #stuff"))
+    _    <- sendRweet(Rweet.parse("Hello, @user4, we're talking about #stuff",
+      u2))
     wall <- userWall(u1)
     wal2 <- userWall(u2)
     wal4 <- userWall(u4)
@@ -93,7 +94,7 @@ object Test extends App {
     println(s"Hash tags for #stuff: ${hs}")
     system.shutdown
   }
-  follow onFailure {
+  followU onFailure {
     case e =>
       system.shutdown
       throw e

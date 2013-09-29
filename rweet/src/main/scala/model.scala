@@ -19,7 +19,7 @@ trait model {
     val hashReg = "#(\\w+)".r
     val userReg = "@(\\w+)".r
     def extract[A](r: Regex, m: String => A)(s: String) =
-      r.findAllIn(s).matchData.map { _.group(1) }.map(m).toSet
+        r.findAllIn(s).matchData.map { _.group(1) }.map(m).toSet
   }
 
 }

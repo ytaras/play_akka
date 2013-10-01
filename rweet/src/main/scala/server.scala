@@ -19,13 +19,20 @@ class DemoServiceActor extends Actor with DemoService {
 }
 
 trait DemoService extends HttpService {
+  import spray.json.DefaultJsonProtocol._
+  import spray.httpx.marshalling._
+  import spray.httpx.SprayJsonSupport._
+
+  case class UserGodObject(id: String)
+  implicit val userGOMarshaller = jsonFormat1(UserGodObject)
+
   val route = {
     get {
       path("hello") {
         complete("World")
       } ~
       path("users" / Segment) { s =>
-        complete(s)
+        complete(UserGodObject(s))
       }
     }
   }

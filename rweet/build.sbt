@@ -10,9 +10,10 @@ resolvers ++= Seq(
 )
 
 libraryDependencies ++= Seq(
-  "net.debasishg" %% "redisreact" % "0.2",
-  "io.spray"    %%  "spray-json"     % sprayVersion,
-  "io.spray"    %   "spray-routing"  % "1.2-20130928",
-  "io.spray"    %   "spray-can"      % "1.2-20130928",
-  "org.scalatest" % "scalatest_2.10" % "2.0.M8" % "test"
+  "net.debasishg" %% "redisreact"     % "0.2",
+  "io.spray"      %% "spray-json"     % "1.2.5",
+  "io.spray"      %  "spray-routing"  % sprayVersion,
+  "io.spray"      %  "spray-can"      % sprayVersion,
+  "io.spray"      %  "spray-testkit"  % sprayVersion % "test",
+  "org.scalatest" % "scalatest_2.10"  % "2.0.M8" % "test"
 )

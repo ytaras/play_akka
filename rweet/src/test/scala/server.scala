@@ -10,21 +10,21 @@ class ServerSpec extends FunSpec with Matchers
     val actorRefFactory = system
   }
   import sut._
+  describe("REST API") {
+    describe("GET /hello") {
+      it("returns 'World'") {
+        Get("/hello") ~> route ~> check {
+          entityAs[String] === "World"
+        }
+      }
+    }
 
-  describe("GET /hello") {
-    it("returns 'World'") {
-      Get("/hello") ~> route ~> check {
-        entityAs[String] === "World"
+    describe("GET /users/:user") {
+      it("returns user description") {
+        Get("/users/user1") ~> route ~> check {
+          entityAs[UserGodObject] === UserGodObject("user1")
+        }
       }
     }
   }
-
-  describe("GET /users/:user") {
-    it("returns user description") {
-      Get("/users/user1") ~> route ~> check {
-        entityAs[UserGodObject] === UserGodObject("user1")
-      }
-    }
-  }
-
 }

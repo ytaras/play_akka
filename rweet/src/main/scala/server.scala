@@ -1,18 +1,19 @@
 package rweet
 
 import spray.routing.HttpService
-import akka.actor.{Actor, Props}
+import akka.actor.{Actor, ActorSystem, Props}
 import akka.io.IO
 import spray.can.Http
 
-object Boot extends App with api {
+object Boot extends App {
 
+  implicit val system = ActorSystem("app")
   val service = system.actorOf(Props[DemoServiceActor])
 
   IO(Http) ! Http.Bind(service, "localhost", port = 8080)
 }
 
-class DemoServiceActor extends Actor with DemoService {
+class DemoServiceActor() extends Actor with DemoService {
   def actorRefFactory = context
 
   def receive = runRoute(route)
@@ -23,9 +24,10 @@ trait DemoService extends HttpService {
   import spray.httpx.marshalling._
   import spray.httpx.SprayJsonSupport._
 
+  // TODO Find correct layout of a cake pattern
+  val aaa: api = new api {}
   case class UserGodObject(id: String)
   implicit val userGOMarshaller = jsonFormat1(UserGodObject)
-
   val route = {
     get {
       path("hello") {
@@ -33,6 +35,12 @@ trait DemoService extends HttpService {
       } ~
       path("users" / Segment) { s =>
         complete(UserGodObject(s))
+      } ~
+      path("users" / Segment / "followers") { s =>
+        complete {
+          import aaa._
+          followers(User(s))
+        }
       }
     }
   }

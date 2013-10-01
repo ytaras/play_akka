@@ -6,6 +6,7 @@ trait model {
   case class HashTag(tag: String)
   case class Rweet(content: String, users: Set[User],
     tags: Set[HashTag], author: User)
+  case class Users(users: List[Users])
 
   object Rweet {
     def parse(m: String, a: User) =

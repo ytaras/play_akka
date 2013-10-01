@@ -11,7 +11,7 @@ class ServerSpec extends FunSpec with Matchers
 
   describe("GET /hello") {
     it("returns 'World'") {
-      Get("/hello") ~> sut.demoRoute ~> check {
+      Get("/hello") ~> sut.route ~> check {
         entityAs[String] === "World"
       }
     }
@@ -19,7 +19,7 @@ class ServerSpec extends FunSpec with Matchers
 
   describe("GET /users/:user") {
     it("returns user id") {
-      Get("/users/user1") ~> sut.demoRoute ~> check {
+      Get("/users/user1") ~> sut.route ~> check {
         entityAs[String] === "user1"
       }
     }

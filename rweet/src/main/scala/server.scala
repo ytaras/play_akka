@@ -15,11 +15,11 @@ object Boot extends App with api {
 class DemoServiceActor extends Actor with DemoService {
   def actorRefFactory = context
 
-  def receive = runRoute(demoRoute)
+  def receive = runRoute(route)
 }
 
 trait DemoService extends HttpService {
-  val demoRoute = {
+  val route = {
     get {
       path("hello") {
         complete("World")

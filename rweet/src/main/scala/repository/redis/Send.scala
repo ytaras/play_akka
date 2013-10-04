@@ -9,25 +9,20 @@ trait Send extends Redis with Repository with Load {
   def c: WallCollections
 
   def sendRweet(rweet: Rweet) =
-    for {
-      fs <- followers(rweet.author)
-      targets = fs + rweet.author ++ rweet.users
-      _  <- sendToUsers(rweet, targets)
-      _  <- sendToTags(rweet, rweet.tags)
-    } yield ()
+      followers(rweet.author) map { fs =>
+        fs + rweet.author ++ rweet.users
+      } flatMap { users =>
+        sendToUsers(rweet, users) zip sendToTags(rweet, rweet.tags)
+      } map { _ => () }
 
-  private def sendToUsers(rweet: Rweet, users: Set[User]) = {
-    val pushes = users.map {
-      u => client.lpush(c.userWall(u), rweet)
-    }
-    Future.sequence(pushes).map { _ => () }
-  }
+  private def sendToUsers(rweet: Rweet, users: Set[User]) =
+    Future.traverse(users) { user =>
+      client.lpush(c.userWall(user), rweet)
+    } map { _ => () }
 
-  private def sendToTags(rweet: Rweet, tags: Set[HashTag]) = {
-    val pushes = tags.map {
-      tag => client.lpush(c.hashWall(tag), rweet)
-    }
-    Future.sequence(pushes).map { _ => () }
-  }
+  private def sendToTags(rweet: Rweet, tags: Set[HashTag]) =
+    Future.traverse(tags) { tag =>
+      client.lpush(c.hashWall(tag), rweet)
+    } map { _ => () }
 
 }

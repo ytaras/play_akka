@@ -5,16 +5,15 @@ import com.redis.serialization._
 
 trait Follow extends Redis with Repository {
   def c: FollowCollections
+
   trait FollowCollections {
     def followers(u: User): String
     def followed(u: User): String
   }
 
   def follow(by: User, of: User) =
-    for {
-      _ <- client.sadd(c.followers(of), by)
-      _ <- client.sadd(c.followed(by), of)
-    } yield ()
+    client.sadd(c.followers(of), by) zip client
+      .sadd(c.followed(by), of) map { _ => () }
 
   def followers(of: User) =
     client.smembers[User](c.followers(of))

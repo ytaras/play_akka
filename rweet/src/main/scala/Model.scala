@@ -1,6 +1,6 @@
 package rweet
 
-trait model {
+trait Model {
   import parser._
   case class User(id: String)
   case class HashTag(tag: String)

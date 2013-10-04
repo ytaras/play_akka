@@ -5,9 +5,8 @@ import akka.actor.{Actor, ActorSystem, Props}
 import akka.io.IO
 import spray.can.Http
 
-object Boot extends App {
+object Boot extends App with Redis {
 
-  implicit val system = ActorSystem("app")
   val service = system.actorOf(Props[DemoServiceActor])
 
   IO(Http) ! Http.Bind(service, "localhost", port = 8080)
@@ -25,7 +24,7 @@ trait DemoService extends HttpService {
   import spray.httpx.SprayJsonSupport._
 
   // TODO Find correct layout of a cake pattern
-  val aaa: api = new api {}
+  val aaa = new RedisRepository {}
   case class UserGodObject(id: String)
   implicit val userGOMarshaller = jsonFormat1(UserGodObject)
   val route = {

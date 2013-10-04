@@ -2,9 +2,8 @@ package rweet
 
 import com.redis.serialization.SprayJsonSupport._
 import com.redis.serialization._
-import spray.json.DefaultJsonProtocol._
 
-trait persistence { self: model =>
+trait Redis extends JsonModel {
   import com.redis._
   import akka.actor.ActorSystem
   import akka.util.Timeout
@@ -15,8 +14,4 @@ trait persistence { self: model =>
   implicit val timeout = Timeout(5.seconds)
 
   val client = RedisClient("localhost", 6379)
-
-  implicit val userFormat = jsonFormat1(User)
-  implicit val hashTagFormat = jsonFormat1(HashTag)
-  implicit val rweetFormat = jsonFormat4(Rweet.apply)
 }

@@ -1,6 +1,6 @@
 scalaVersion := "2.10.2"
 
-resolvers ++= Seq(
+resolvers in ThisBuild ++= Seq(
   "spray" at "http://repo.spray.io/",
   "nightly-spray" at "http://nightlies.spray.io/"
 )
